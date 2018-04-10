@@ -1,0 +1,246 @@
+library(rjags)
+
+# Start the clock!
+ptm <- proc.time()
+
+model1.string <-  "
+model{
+for(i in 1:NS){
+y[i]~dnorm(dm[i],prec[i])
+prec[i]<-1/(SE[i]*SE[i])
+dm[i]~dnorm(DM[i],prec.t)
+DM[i]<-d[t2[i]]-d[t1[i]]
+}
+d[1:NT] ~ dmnorm(md1[1:(NT)],prec1[1:(NT),1:(NT)])
+
+for (i in 1:(NT)) {md1[i]<-md0 }		
+		
+for(k in 1:(NT)){taud1[k,k]<-tau.sqd}
+
+for (i in 1:(NT-1)){
+for (k in (i+1):(NT)){
+taud1[i,k]<-0.5*tau.sqd
+taud1[k,i]<-taud1[i,k]
+}}
+
+prec1[1:(NT),1:(NT)]<-inverse(taud1[1:(NT),1:(NT)])
+
+
+md0~dnorm(0,0.1)
+taud ~ dunif(0,5)                                  
+tau.sqd<- pow(taud,2)
+
+tau~dunif(0,3)
+prec.t<-1/pow(tau,2)
+
+
+for (i in 1:NT){
+for (j in i:NT){
+D[j,i]<-d[j]-d[i]
+}}
+
+for (i in 2:NT){
+dref[i]<-d[i]-d[1]
+}
+
+  #TreatmeNT hierarchy
+  order[1:NT]<- NT+1- rank(d[1:NT])
+for(k in 1:NT) {
+# this is when the outcome is positive - omit  'NT+1-' when the outcome is negative
+most.effective[k]<-equals(order[k],1)
+for(j in 1:NT) {
+effectiveness[k,j]<- equals(order[k],j)
+}
+}
+
+for(k in 1:NT) {
+for(j in 1:NT) {
+cumeffectiveness[k,j]<- sum(effectiveness[k,1:j])
+}
+}
+
+#SUCRAS#
+
+for(k in 1:NT) {
+SUCRA[k]<- sum(cumeffectiveness[k,1:(NT-1)]) /(NT-1)
+}
+}
+"
+####### definitions 
+jags.m=list()
+samps=list()
+A1=list()
+count1=N.treat*(N.treat-1)/2+N.treat
+lower=list()
+upper=list()
+lower_D=list()
+upper_D=list()
+SUCRA=list()
+count2=N.treat*(N.treat-1)/2
+best.worst=c()
+best.2worst=c()
+sum7=c()
+sum8=c()
+count3=N.treat*(N.treat-1)/2
+lower3=list()
+sortedSUCRA=list()
+best=c()
+worst=c()
+sec.worst=c()
+third.worst=c()
+fourth.worst=c()
+count4=N.treat*(N.treat-1)/2+N.treat+N.treat-1
+######
+
+for (i in 1:N.sim){
+  model1.spec<-textConnection(model1.string) 
+    data <- list(y = data1[[i]]$TE,SE=data1[[i]]$seTE, NS=length(data1[[i]]$studlab), t1=data1[[i]]$t1,t2=data1[[i]]$t2, NT=N.treat)
+  jags.m[[i]] <- jags.model(model1.spec, data = data, n.chains = 2, n.adapt = 5000)
+  
+  
+  params <- c("d[2]","d[3]","d[4]","d[5]","d[6]","d[7]","d[8]","d[9]","d[10]")
+  
+  for (i in 1:9){
+    for (j in (i+1):10){
+      params=c(params, paste("D[",j,",",i,"]",sep=""))
+      closeAllConnections()
+    }
+  }
+  
+  for (i in 1:10){
+    params=c(params, paste("SUCRA[",i,"]" ,sep=""))
+  }
+}
+
+
+
+
+for (i in 2:10){
+    params=c(params, paste("dref[",i,"]",sep=""))
+    #closeAllConnections()
+  }
+
+
+for (i in 1:N.sim){
+  samps[[i]] <- coda.samples(jags.m[[i]], params, n.iter = 30000)
+  
+  
+  
+  ########## fit the model 
+  #plot(samps)
+  burn.in <- 15000
+  A1[[i]]=summary(window(samps[[i]],start = burn.in))
+  lower[[i]]= A1[[i]]$quantiles[(count4+1):(length(A1[[i]]$quantiles[,1])),1]
+  upper[[i]]= A1[[i]]$quantiles[(count4+1):(length(A1[[i]]$quantiles[,1])),5]
+  
+  SUCRA[[i]]=A1[[i]]$statistics[(count2+1):(count2+N.treat),1] 
+  lower_D[[i]]=A1[[i]]$quantiles[1:count2,1]
+  upper_D[[i]]=A1[[i]]$quantiles[1:count2,5]
+  best[i]=(which(SUCRA[[i]]==sort(SUCRA[[i]])[10]))-1+10*((which(SUCRA[[i]]==sort(SUCRA[[i]])[10]))==1)
+  worst[i]=(which(SUCRA[[i]]==sort(SUCRA[[i]])[2]))-1+10*((which(SUCRA[[i]]==sort(SUCRA[[i]])[2]))==1)
+  best.worst[i]=which(rownames(A1[[i]]$quantiles)==paste("D[",max(best[i],worst[i]),",",min(best[i],worst[i]),"]",sep=""))
+  sec.worst[i]=(which(SUCRA[[i]]==sort(SUCRA[[i]])[3]))-1+10*((which(SUCRA[[i]]==sort(SUCRA[[i]])[3]))==1)
+  
+  sum7[i]=sum((A1[[i]]$quantiles[best.worst[i],1])>0)+sum(A1[[i]]$quantiles[best.worst[i],5]<0)
+  best.2worst[i]=which(rownames(A1[[i]]$statistics)==paste("D[",max(best[i],sec.worst[i]),",",min(best[i],sec.worst[i]),"]",sep=""))
+  sum8[i]=sum((A1[[i]]$quantiles[best.2worst[i],1])>0)+sum(A1[[i]]$quantiles[best.2worst[i],5]<0)
+  lower3[[i]]= A1[[i]]$quantiles[1:count3,1]
+  third.worst[i]=(which(SUCRA[[i]]==sort(SUCRA[[i]])[4]))-1+10*((which(SUCRA[[i]]==sort(SUCRA[[i]])[4]))==1)
+  fourth.worst[i]=(which(SUCRA[[i]]==sort(SUCRA[[i]])[5]))-1+10*((which(SUCRA[[i]]==sort(SUCRA[[i]])[5]))==1)
+  
+  samps[[i]]=c(0)
+  A1[[i]]=c(0)
+  jags.m[[i]]=c(0)
+  print(i)
+  closeAllConnections()
+}
+
+#plot(samps[[10]][[1]][,66])
+
+# Stop the clock
+proc.time() - ptm
+
+#### when no treatment effects 
+
+sum1=c(rep(100,N.sim))
+for (i in 1:N.sim)
+{
+  sum1[i]=sum(lower[[i]]>0)+sum(upper[[i]]<0)
+}
+
+sum(sum1>0)/N.sim ## percent of NMAs with at least one st. sign. basic parameter. 
+
+
+
+SUCRA_max=c()
+SUCRA_min=c()
+for (i in 1:N.sim){
+  SUCRA_max[i]=max(SUCRA[[i]])
+  SUCRA_min[i]=min(SUCRA[[i]])
+}
+
+mean(SUCRA_max)
+min(SUCRA_max)
+max(SUCRA_max)
+
+mean(SUCRA_min)
+min(SUCRA_min)
+max(SUCRA_min)
+
+
+sum6=c(rep(100,N.sim))
+
+for (i in 1:N.sim)
+{
+  sum6[i]=sum(lower_D[[i]]>0)+sum(upper_D[[i]]<0)
+}
+
+sum(sum6>0)/N.sim  # percent of NMAs with at least one stat. sign. finding
+
+
+
+#### when non-zero treatment effects
+
+SUCRA_max=c()
+SUCRA_min=c()
+for (i in 1:N.sim){
+  SUCRA_max[i]=max(SUCRA[[i]])
+  SUCRA_min[i]=min(SUCRA[[i]])
+}
+sum(sum7>0)
+sum(sum8>0)
+
+
+### power
+
+sum9=c(rep(100,N.sim))
+for (i in 1:N.sim)
+{
+  sum9[i]=sum(lower[[i]]>0)
+}
+
+sum(sum9)/(N.sim*(N.treat-1))
+
+
+
+### power scenario 5
+
+sum10=c(rep(100,N.sim))
+for (i in 1:N.sim)
+{
+  sum10[i]=sum(lower3[[i]]>0)
+}
+
+sum(sum10)/(N.sim*N.treat*(N.treat-1)/2)
+
+
+
+####
+
+net1[[11]]$TE.fixed[11,]
+net1[[11]]$lower.fixed[11,]
+net1[[11]]$upper.fixed[11,]
+
+gelman.diag(samps)
+gelman.plot(samps)
+
