@@ -320,7 +320,7 @@ for (i in 1:N.sim)
   TE=c(rep(0,N.studies.comp*(N.treat-1))) 
   data1[[i]]=data.frame(TE,seTE)
   data1[[i]]$seTE=0.2*rchisq(N.stud,df=1)+0.5
-  data1[[i]]$TE=rnorm(N.studies.comp*(N.treat-1),2,data1[[i]]$seTE)
+  data1[[i]]$TE=rnorm(N.studies.comp*(N.treat-1),1,data1[[i]]$seTE)
   data1[[i]]$studlab=c(1:(N.studies.comp*(N.treat-1)))
   data1[[i]]$t1=t1
   data1[[i]]$t2=t2
