@@ -1,5 +1,6 @@
 library(rjags)
 
+#### fit the model #####
 # Start the clock!
 ptm <- proc.time()
 
@@ -8,8 +9,7 @@ model{
 for(i in 1:NS){
 dm[i]<-d[t2[i]]-d[t1[i]]
 prec[i]<-1/(SE[i]*SE[i])
-y[i]~dnorm(dm[i],prec[i])
-}
+y[i]~dnorm(dm[i],prec[i])}
 d[1:NT] ~ dmnorm(md1[1:(NT)],prec1[1:(NT),1:(NT)])
 
 for (i in 1:(NT)) {md1[i]<-md0 }		
@@ -19,11 +19,9 @@ for(k in 1:(NT)){taud1[k,k]<-tau.sqd}
 for (i in 1:(NT-1)){
 for (k in (i+1):(NT)){
 taud1[i,k]<-0.5*tau.sqd
-taud1[k,i]<-taud1[i,k]
-}}
+taud1[k,i]<-taud1[i,k]}}
 
 prec1[1:(NT),1:(NT)]<-inverse(taud1[1:(NT),1:(NT)])
-
 
 md0~dnorm(0,0.1)
 taud ~ dunif(0,5)                                  
@@ -31,12 +29,10 @@ tau.sqd<- pow(taud,2)
 
 for (i in 1:NT){
 for (j in i:NT){
-D[j,i]<-d[j]-d[i]
-}}
+D[j,i]<-d[j]-d[i]}}
 
 for (i in 2:NT){
-dref[i]<-d[i]-d[1]
-}
+dref[i]<-d[i]-d[1]}
 
   #TreatmeNT hierarchy
   order[1:NT]<- NT+1- rank(d[1:NT])
@@ -44,24 +40,17 @@ for(k in 1:NT) {
 # this is when the outcome is positive - omit  'NT+1-' when the outcome is negative
 most.effective[k]<-equals(order[k],1)
 for(j in 1:NT) {
-effectiveness[k,j]<- equals(order[k],j)
-}
-}
+effectiveness[k,j]<- equals(order[k],j)}}
 
 for(k in 1:NT) {
 for(j in 1:NT) {
-cumeffectiveness[k,j]<- sum(effectiveness[k,1:j])
-}
-}
+cumeffectiveness[k,j]<- sum(effectiveness[k,1:j])}}
 
 #SUCRAS#
-
 for(k in 1:NT) {
-SUCRA[k]<- sum(cumeffectiveness[k,1:(NT-1)]) /(NT-1)
-}
-}
+SUCRA[k]<- sum(cumeffectiveness[k,1:(NT-1)]) /(NT-1)}}
 "
-####### definitions 
+###### definitions 
 jags.m=list()
 samps=list()
 A1=list()
@@ -85,13 +74,13 @@ sec.worst=c()
 third.worst=c()
 fourth.worst=c()
 count4=N.treat*(N.treat-1)/2+N.treat+N.treat-1
-######
+####
 
 for (i in 1:N.sim){
   model1.spec<-textConnection(model1.string) 
     data <- list(y = data1[[i]]$TE,SE=data1[[i]]$seTE, NS=length(data1[[i]]$studlab), t1=data1[[i]]$t1,t2=data1[[i]]$t2, NT=N.treat)
   jags.m[[i]] <- jags.model(model1.spec, data = data, n.chains = 2, n.adapt = 5000)
-  
+  print(i)
   
   params <- c("d[2]","d[3]","d[4]","d[5]","d[6]","d[7]","d[8]","d[9]","d[10]")
   
@@ -99,8 +88,7 @@ for (i in 1:N.sim){
     for (j in (i+1):10){
       params=c(params, paste("D[",j,",",i,"]",sep=""))
       closeAllConnections()
-    }
-  }
+    }  }
   
   for (i in 1:10){
     params=c(params, paste("SUCRA[",i,"]" ,sep=""))
@@ -144,7 +132,7 @@ for (i in 1:N.sim){
   fourth.worst[i]=(which(SUCRA[[i]]==sort(SUCRA[[i]])[5]))-1+10*((which(SUCRA[[i]]==sort(SUCRA[[i]])[5]))==1)
   
   samps[[i]]=c(0)
-  #A1[[i]]=c(0)
+  A1[[i]]=c(0)
   jags.m[[i]]=c(0)
   print(i)
   closeAllConnections()
@@ -155,7 +143,7 @@ for (i in 1:N.sim){
 # Stop the clock
 proc.time() - ptm
 
-#### when no treatment effects 
+#### when no treatment effects #####
 
 sum1=c(rep(100,N.sim))
 for (i in 1:N.sim)
@@ -194,43 +182,46 @@ sum(sum6>0)/N.sim  # percent of NMAs with at least one stat. sign. finding
 
 
 
-#### when non-zero treatment effects
+#### when non-zero treatment effects, SCENARIO 5#####
 
-SUCRA_max=c()
-SUCRA_min=c()
-for (i in 1:N.sim){
-  SUCRA_max[i]=max(SUCRA[[i]])
-  SUCRA_min[i]=min(SUCRA[[i]])
+### false positive rates
+sum(sum7>0)/N.sim ### % of networks where the best vs worst treatment (not placebo) are SS
+sum(sum8>0)/N.sim ### % of networks where the best vs 2nd worst treatment (not placebo) are SS
+
+### false positive rates in all treatment-treatment comparisons
+sum11=c(rep(100,N.sim))
+sum12=c(rep(100,N.sim))
+low=list()
+up=list()
+low1=list()
+up1=list()
+sum11=c(rep(100,N.sim))
+sum12=c(rep(100,N.sim))
+for (i in 1:N.sim)
+{ low[[i]]=as.matrix(lower_D[[i]])
+up[[i]]=as.matrix(upper_D[[i]])
+low1[[i]]=low[[i]][substr(rownames(low[[i]]),nchar(rownames(low[[i]]))-1,nchar(rownames(low[[i]]))-1)!="1"]
+up1[[i]]=up[[i]][substr(rownames(up[[i]]),nchar(rownames(up[[i]]))-1,nchar(rownames(up[[i]]))-1)!="1"]
 }
-sum(sum7>0)
-sum(sum8>0)
+
+for (i in 1:N.sim)
+{  sum11[i]=sum(low1[[i]]>0)
+sum12[i]=sum(up1[[i]]<0)
+}
+
+sum(sum11+sum12)/(N.sim*(N.treat-1)*(N.treat-2)/2) # false positive rates in all comparisons
 
 
-### power
-
+### power to detect effects vs placebo
 sum9=c(rep(100,N.sim))
 for (i in 1:N.sim)
-{
-  sum9[i]=sum(lower[[i]]>0)
-}
-
-sum(sum9)/(N.sim*(N.treat-1))
+{  sum9[i]=sum(lower[[i]]>0)}
+sum(sum9)/(N.sim*(N.treat-1))  # percent of treat vs placebo comparisons that were SS in all datasets 
+sum(sum9!=0)/N.sim# percent of networks with at least 1 SS in comparisons vs placebo 
 
 
 
-### power scenario 5
-
-sum10=c(rep(100,N.sim))
-for (i in 1:N.sim)
-{
-  sum10[i]=sum(lower3[[i]]>0)
-}
-
-sum(sum10)/(N.sim*N.treat*(N.treat-1)/2)
-
-
-
-####
+#### proxeiro #####
 
 net1[[11]]$TE.fixed[11,]
 net1[[11]]$lower.fixed[11,]

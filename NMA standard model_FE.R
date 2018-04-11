@@ -165,6 +165,29 @@ proc.time() - ptm
  sum(sum7>0)/N.sim ### % of networks where the best vs worst treatment (not placebo) are SS
 sum(sum8>0)/N.sim ### % of networks where the best vs 2nd worst treatment (not placebo) are SS
 
+### false positive rates in all comparisons
+sum11=c(rep(100,N.sim))
+sum12=c(rep(100,N.sim))
+low=list()
+up=list()
+low1=list()
+up1=list()
+sum11=c(rep(100,N.sim))
+sum12=c(rep(100,N.sim))
+for (i in 1:N.sim)
+{ low[[i]]=as.matrix(lower_D[[i]])
+up[[i]]=as.matrix(upper_D[[i]])
+low1[[i]]=low[[i]][substr(rownames(low[[i]]),nchar(rownames(low[[i]]))-1,nchar(rownames(low[[i]]))-1)!="1"]
+up1[[i]]=up[[i]][substr(rownames(up[[i]]),nchar(rownames(up[[i]]))-1,nchar(rownames(up[[i]]))-1)!="1"]
+}
+
+for (i in 1:N.sim)
+{  sum11[i]=sum(low1[[i]]>0)
+sum12[i]=sum(up1[[i]]<0)
+}
+
+sum(sum11+sum12)/(N.sim*(N.treat-1)*(N.treat-2)/2)
+
 
 ### power to detect effects vs placebo
 sum9=c(rep(100,N.sim))
