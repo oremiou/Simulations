@@ -1,6 +1,7 @@
 #set.seed(424242)
 library(rjags)
 
+#### fit the model #####
 # Start the clock!
 ptm <- proc.time()
 
@@ -11,19 +12,16 @@ y[i]~dnorm(dm[i],prec[i])
 prec[i]<-1/(SE[i]*SE[i])
 
 dm[i]~dnorm(DM[i],prec.t)
-DM[i]<-d[t2[i]]-d[t1[i]]
-}
+DM[i]<-d[t2[i]]-d[t1[i]]}
 d[1]<-0
 for(i in 2:NT){
-d[i]~dnorm(0,0.0001)
-}
+d[i]~dnorm(0,0.0001)}
 tau~dunif(0,5)
 prec.t<-1/pow(tau,2)
 
 for (i in 1:NT){
 for (j in i:NT){
-D[j,i]<-d[j]-d[i]
-}}
+D[j,i]<-d[j]-d[i]}}
 
   #TreatmeNT hierarchy
   order[1:NT]<- NT+1- rank(d[1:NT])
@@ -31,22 +29,16 @@ for(k in 1:NT) {
 # this is when the outcome is positive - omit  'NT+1-' when the outcome is negative
 most.effective[k]<-equals(order[k],1)
 for(j in 1:NT) {
-effectiveness[k,j]<- equals(order[k],j)
-}
-}
+effectiveness[k,j]<- equals(order[k],j)}}
 
 for(k in 1:NT) {
 for(j in 1:NT) {
-cumeffectiveness[k,j]<- sum(effectiveness[k,1:j])
-}
-}
+cumeffectiveness[k,j]<- sum(effectiveness[k,1:j])}}
 
 #SUCRAS#
 
 for(k in 1:NT) {
-SUCRA[k]<- sum(cumeffectiveness[k,1:(NT-1)]) /(NT-1)
-}
-}
+SUCRA[k]<- sum(cumeffectiveness[k,1:(NT-1)]) /(NT-1)}}
 "
 jags.m=list()
 samps=list()
@@ -105,8 +97,8 @@ samps[[i]] <- coda.samples(jags.m[[i]], params, n.iter = 30000)
 #plot(samps)
 burn.in <- 15000
 A1[[i]]=summary(window(samps[[i]],start = burn.in))
- lower[[i]]= A1[[i]]$quantiles[(count1+1):(length(A1[[i]]$quantiles[,1])-2),1]
- upper[[i]]= A1[[i]]$quantiles[(count1+1):(length(A1[[i]]$quantiles[,1])-2),5]
+ lower[[i]]= A1[[i]]$quantiles[(count1+1):(length(A1[[i]]$quantiles[,1])),1]
+ upper[[i]]= A1[[i]]$quantiles[(count1+1):(length(A1[[i]]$quantiles[,1])),5]
  
    SUCRA[[i]]=A1[[i]]$statistics[(count2+1):(count2+N.treat),1] 
    lower_D[[i]]=A1[[i]]$quantiles[1:count2,1]
@@ -135,17 +127,19 @@ closeAllConnections()
 # Stop the clock
 proc.time() - ptm
 
-#### when no treatment effects 
+#### when no treatment effects ######
 
  sum1=c(rep(100,N.sim))
  for (i in 1:N.sim)
- {
- sum1[i]=sum(lower[[i]]>0)+sum(upper[[i]]<0)
- }
+ { sum1[i]=sum(lower[[i]]>0)+sum(upper[[i]]<0) }
+  sum(sum1>0)/N.sim ## percent of NMAs with at least one st. sign. basic parameter. 
+
+ sum6=c(rep(100,N.sim))
+ for (i in 1:N.sim)
+ {   sum6[i]=sum(lower_D[[i]]>0)+sum(upper_D[[i]]<0) }
+  sum(sum6>0)/N.sim  # percent of NMAs with at least one stat. sign. finding
+
  
- sum(sum1>0)/N.sim ## percent of NMAs with at least one st. sign. basic parameter. 
-
-
 
  SUCRA_max=c()
  SUCRA_min=c()
@@ -163,18 +157,9 @@ proc.time() - ptm
  max(SUCRA_min)
  
  
- sum6=c(rep(100,N.sim))
-
- for (i in 1:N.sim)
- {
-   sum6[i]=sum(lower_D[[i]]>0)+sum(upper_D[[i]]<0)
- }
- 
- sum(sum6>0)/N.sim  # percent of NMAs with at least one stat. sign. finding
 
  
- 
- #### when non-zero treatment effects
+ #### when non-zero treatment effects ######
  
  SUCRA_max=c()
  SUCRA_min=c()
