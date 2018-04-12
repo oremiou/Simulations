@@ -317,7 +317,7 @@ N.stud=length(t1)
 for (i in 1:N.sim)
 {
   seTE=c(rep(0,N.studies.comp*(N.treat-1))) 
-  TE=c(rep(0,N.studies.comp*(N.treat-1))) 
+  TE=c(rep(1,N.studies.comp*(N.treat-1))) 
   data1[[i]]=data.frame(TE,seTE)
   data1[[i]]$seTE=0.2*rchisq(N.stud,df=1)+0.5
   data1[[i]]$TE=rnorm(N.studies.comp*(N.treat-1),1,data1[[i]]$seTE)
@@ -339,6 +339,45 @@ netleague(net1[[1]])
 
 
 
+
+
+##### SCENARIO 6 - FULLY CONNECTED NETWORK - EQUAL EFFECTS FOR ALL TREATMENTS VS PLACEBO - HOMOGENEITY ###########################################################################
+N.sim=1000
+N.treat=10
+N.studies.comp=1 # studies per comparison
+data1=list()
+net1=list()
+
+#define the treatments in the studies
+t1=c()
+t2=c()
+for (i in 1:(N.treat-1)){
+  for (k in (i+1):N.treat){
+    for(j in 1:N.studies.comp){
+      t1=c(t1,i)
+      t2=c(t2,k)  
+    }
+  }
+}
+
+N.stud=length(t1)
+for (i in 1:N.sim)
+{
+  seTE=c(rep(0,N.stud)) 
+  TE=c(rep(1,N.treat-1),rep(0,N.stud-N.treat+1)) 
+  data1[[i]]=data.frame(TE,seTE)
+  data1[[i]]$seTE=0.2*rchisq(N.studies.comp*(N.treat-1),df=1)+0.5
+  data1[[i]]$TE=rnorm(N.stud,TE,data1[[i]]$seTE)
+  data1[[i]]$studlab=c(1:(N.stud))
+  data1[[i]]$t1=t1
+  data1[[i]]$t2=t2
+}
+
+
+
+
+
+#####################
 
 #############
 ####### proxeiro

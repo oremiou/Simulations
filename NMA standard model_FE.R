@@ -90,8 +90,8 @@ samps[[i]] <- coda.samples(jags.m[[i]], params, n.iter = 40000)
 #plot(samps)
 burn.in <- 20000
 A1[[i]]=summary(window(samps[[i]],start = burn.in))
- lower[[i]]= A1[[i]]$quantiles[(count1+1):(length(A1[[i]]$quantiles[,1])-2),1]
- upper[[i]]= A1[[i]]$quantiles[(count1+1):(length(A1[[i]]$quantiles[,1])-2),5]
+ lower[[i]]= A1[[i]]$quantiles[(count1+1):(length(A1[[i]]$quantiles[,1])),1]
+ upper[[i]]= A1[[i]]$quantiles[(count1+1):(length(A1[[i]]$quantiles[,1])),5]
  
    SUCRA[[i]]=A1[[i]]$statistics[(count2+1):(count2+N.treat),1] 
    lower_D[[i]]=A1[[i]]$quantiles[1:count2,1]
@@ -109,7 +109,7 @@ A1[[i]]=summary(window(samps[[i]],start = burn.in))
    #fourth.worst[i]=(which(SUCRA[[i]]==sort(SUCRA[[i]])[5]))-1+10*((which(SUCRA[[i]]==sort(SUCRA[[i]])[5]))==1)
    
   samps[[i]]=c(0)
-  A1[[i]]=c(0)
+ # A1[[i]]=c(0)
    jags.m[[i]]=c(0)
   print(i)
 closeAllConnections()
@@ -224,7 +224,7 @@ sum(sum9!=0)/N.sim# percent of networks with at least 1 SS in comparisons vs pla
 
 
  
-####
+########proxeiro ######
 
 net1[[11]]$TE.fixed[11,]
 net1[[11]]$lower.fixed[11,]
