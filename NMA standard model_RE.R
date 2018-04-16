@@ -192,16 +192,52 @@ for (i in 1:N.sim)
 }
 
 sum(sum10)/(N.sim*N.treat*(N.treat-1)/2)
-
-
- 
 ####
 
-net1[[11]]$TE.fixed[11,]
-net1[[11]]$lower.fixed[11,]
-net1[[11]]$upper.fixed[11,]
+#net1[[11]]$TE.fixed[11,]
+#net1[[11]]$lower.fixed[11,]
+#net1[[11]]$upper.fixed[11,]
+#gelman.diag(samps)
+#gelman.plot(samps)
  
- gelman.diag(samps)
- gelman.plot(samps)
  
  
+ 
+ 
+ #### scenario 7 ######
+ 
+ ##### type 1 error for differences between worthless drugs
+ sum1=c(rep(100,N.sim))
+ lower_g1=list()
+ upper_g1=list()
+ for (i in 1:N.sim)
+ {   lower_g1[[i]]=c(lower_D[[i]][10:19])
+   upper_g1[[i]]=c(upper_D[[i]][10:19])
+   sum1[i]=sum(lower_g1[[i]]>0)+sum(upper_g1[[i]]<0)}
+ sum(sum1)/(10*N.sim) ## percent of SS findings between treatments in group 1
+ sum(sum1>0)/N.sim ## percent of datasets with at least 1 SS findings between treatments in group 1
+
+ ##### type 1 error for differences between effective drugs 
+ sum2=c(rep(100,N.sim))
+ lower_g2=list()
+ upper_g2=list()
+ for (i in 1:N.sim)
+ {   lower_g2[[i]]=c(lower_D[[i]][6:9],lower_D[[i]][30],lower_D[[i]][36:37],lower_D[[i]][43:45])
+ upper_g2[[i]]=c(upper_D[[i]][6:9],upper_D[[i]][30],upper_D[[i]][36:37],upper_D[[i]][43:45])
+ sum2[i]=sum(lower_g2[[i]]>0)+sum(upper_g2[[i]]<0)}
+ sum(sum2)/(10*N.sim) ## percent of SS findings between treatments in group 2 
+ sum(sum2>0)/N.sim ## percent of datasets with at least 1 SS findings between group 2 treatments
+ 
+ #### power to detect differences between drugs
+ sum3=c(rep(100,N.sim))
+ lower_g3=list()
+# upper_g3=list()
+ for (i in 1:N.sim)
+ {   lower_g3[[i]]=c(lower_D[[i]][1:5],lower_D[[i]][20:29],lower_D[[i]][31:35],lower_D[[i]][38:42])
+ sum3[i]=sum(lower_g3[[i]]>0)}
+ sum(sum3)/(25*N.sim) ## power: percent of SS findings between treatments of group 2 vs 1
+ sum(sum3>0)/N.sim ## percent of datasets with at least 1 SS findings between treatments group 2 vs 1
+ 
+ 
+  
+  
