@@ -402,7 +402,7 @@ for (i in 1:(N.treat-1)){
 
 N.stud=length(t1)
 comp=c(rep(1,N.stud))
-for (i in 1:N.stud){if ((t1[i]<6&t2[i]<6)|(t1[i]>6&t2[i]>6)){comp[i]=0}}
+for (i in 1:N.stud){if ((t1[i]<6&t2[i]<6)|(t1[i]>5&t2[i]>5)){comp[i]=0}}
 
 for (i in 1:N.sim)
 {
