@@ -248,6 +248,10 @@ sum2[i]=sum(lower_g2[[i]]>0)+sum(upper_g2[[i]]<0)}
 sum(sum2)/(10*N.sim) ## percent of SS findings between treatments in group 2 
 sum(sum2>0)/N.sim ## percent of datasets with at least 1 SS findings between group 2 treatments
 
+##### type 1 error for differences overall
+sum(sum1>0|sum2>0)/N.sim
+
+
 #### power to detect differences between drugs
 sum3=c(rep(100,N.sim))
 lower_g3=list()
