@@ -266,6 +266,37 @@ sum(sum3>0)/N.sim ## percent of datasets with at least 1 SS findings between tre
 
 
 
+
+#### scenario 8 ######
+#### power to detect differences between drugs and placebo
+sum3=c(rep(100,N.sim))
+lower_g3=list()
+for (i in 1:N.sim)
+{   sum3[i]=sum(lower_D[[i]]>0)}
+sum(sum3)/(45*N.sim) ## power: percent of SS findings between all treatments
+
+sum4=c(rep(100,N.sim))
+for (i in 1:N.sim)
+{   sum4[i]=sum(upper_D[[i]]<0)}
+sum(sum4)/(45*N.sim) ## power: percent of false findings 
+
+
+#### power to detect differences between drugs and drugs
+low1=list()
+for (i in 1:N.sim)
+{
+  low1[[i]]=lower_D[[i]][substr(names(lower_D[[i]]),nchar(names(lower_D[[i]]))-1,nchar(names(lower_D[[i]]))-1)!=1]
+}
+
+sum5=c(rep(100,N.sim))
+for (i in 1:N.sim)
+{   sum5[i]=sum(low1[[i]]>0)}
+sum(sum5)/(36*N.sim) ## power to detect treatment effects
+
+
+
+
+
 ########proxeiro ######
 
 net1[[11]]$TE.fixed[11,]
